@@ -1,6 +1,6 @@
 module LicenseCheck
 
-import licensecheck_jll
+using licensecheck_jll: licensecheck_jll
 
 export licensecheck
 
@@ -25,8 +25,11 @@ julia> licensecheck(text)
 ```
 """
 function licensecheck(text::String)
-    arr, dims, percent_covered =  ccall((:License, licensecheck_jll.licensecheck), Tuple{Ptr{Ptr{UInt8}}, Cint, Float64}, (Cstring,), text)
-    return (; licenses = unsafe_string.(unsafe_wrap(Array, arr, dims, own = true)), percent_covered)
+    arr, dims, percent_covered = ccall((:License, licensecheck_jll.licensecheck),
+                                       Tuple{Ptr{Ptr{UInt8}},Cint,Float64}, (Cstring,),
+                                       text)
+    return (; licenses=unsafe_string.(unsafe_wrap(Array, arr, dims; own=true)),
+            percent_covered=percent_covered)
 end
 
 end
