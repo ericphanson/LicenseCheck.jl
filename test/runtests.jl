@@ -58,7 +58,7 @@ dorian_gray = """
     There is no such thing as a moral or an immoral book.  Books are well
     written, or badly written.  That is all."""
 
-@testset "LicenseCheck.jl" begin
+@testset "`licensecheck`" begin
     result = licensecheck(MIT)
     @test result.licenses == ["MIT"]
     @test result.percent_covered ≈ 100.0 atol = 2
@@ -76,4 +76,9 @@ dorian_gray = """
     @test result.percent_covered ≈
           100 * (length(MIT) + length(Latex2e)) /
           (length(dorian_gray) + length(MIT) + length(Latex2e)) atol = 5
+end
+
+@testset "`is_osi_approved`" begin
+    @test is_osi_approved("MIT") == true
+    @test is_osi_approved("ABC") == false
 end
