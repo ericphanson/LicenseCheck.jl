@@ -2,9 +2,12 @@ module LicenseCheck
 
 using licensecheck_jll: licensecheck_jll
 
-export licensecheck, is_osi_approved, find_possible_licenses, find_best_license
+export licensecheck, is_osi_approved
+export find_licenses, find_license
+export find_licenses_by_bruteforce, find_licenses_by_list, find_licenses_by_list_intersection
 
 include("OSI_LICENSES.jl")
+include("find_licenses.jl")
 
 """
     licensecheck(text::String) -> @NamedTuple{licenses::Vector{String}, percent_covered::Float64}
@@ -56,49 +59,5 @@ true
 """
 is_osi_approved(spdx_identifier::String) = spdx_identifier ∈ OSI_LICENSES
 
-# the largest license in `https://github.com/spdx/license-list-data/blob/v3.10/text`
-# is the `APL-1.0` license which is 45 KB.
-# We take a factor of 10 larger, to allow for
-# compound licenses.
-const LICENSE_MAX_SIZE_IN_BYTES = 45958*10
 
-possible_license(file) = isfile(file) && stat(file).size < LICENSE_MAX_SIZE_IN_BYTES
-
-"""
-    find_possible_licenses(dir) -> Vector{@NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}}
-
-Compiles a table of possible licenses (i.e. plaintext files smaller than $(LICENSE_MAX_SIZE_IN_BYTES ÷ 1000) KiB) at the top-level of a directory `dir` with their path and the results of [`licensecheck`](@ref), sorted by
-`percent_covered`.
-
-## Example
-
-```julia
-julia> find_possible_licenses(".")
-5-element Vector{NamedTuple{(:path, :licenses, :percent_covered), Tuple{String, Vector{String}, Float64}}}:
- (path = "./LICENSE", licenses = ["MIT"], percent_covered = 98.82352941176471)
- (path = "./.gitignore", licenses = [], percent_covered = 0.0)
- (path = "./Manifest.toml", licenses = [], percent_covered = 0.0)
- (path = "./Project.toml", licenses = [], percent_covered = 0.0)
- (path = "./README.md", licenses = [], percent_covered = 0.0)
-```
-"""
-function find_possible_licenses(dir)
-    possible_licenses = filter(possible_license, readdir(dir; join=true))
-    results = @NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}[]
-    for possible_license in possible_licenses
-        text = read(possible_license, String)
-        isvalid(String, text) || continue
-        push!(results, (; path=possible_license, licensecheck(text)...))
-    end
-    sort!(results; by = x -> x.percent_covered, rev=true)
-    return results
-end
-
-"""
-    find_best_license(dir) -> @NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}
-
-Returns the license with the highest `percent_covered` from [`find_possible_licenses`](@ref).
-"""
-find_best_license(dir) = find_possible_licenses(dir)[1]
-
-end
+end # module
