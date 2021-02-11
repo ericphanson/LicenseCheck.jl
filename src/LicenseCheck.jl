@@ -69,6 +69,18 @@ possible_license(file) = isfile(file) && stat(file).size < LICENSE_MAX_SIZE_IN_B
 
 Compiles a table of possible licenses (i.e. plaintext files smaller than $(LICENSE_MAX_SIZE_IN_BYTES ÷ 1000) KiB) at the top-level of a directory `dir` with their path and the results of [`licensecheck`](@ref), sorted by
 `percent_covered`.
+
+## Example
+
+```julia
+julia> find_possible_licenses(".")
+5-element Vector{NamedTuple{(:path, :licenses, :percent_covered), Tuple{String, Vector{String}, Float64}}}:
+ (path = "./LICENSE", licenses = ["MIT"], percent_covered = 98.82352941176471)
+ (path = "./.gitignore", licenses = [], percent_covered = 0.0)
+ (path = "./Manifest.toml", licenses = [], percent_covered = 0.0)
+ (path = "./Project.toml", licenses = [], percent_covered = 0.0)
+ (path = "./README.md", licenses = [], percent_covered = 0.0)
+```
 """
 function find_possible_licenses(dir)
     possible_licenses = filter(possible_license, readdir(dir; join=true))
@@ -78,7 +90,7 @@ function find_possible_licenses(dir)
         isvalid(String, text) || continue
         push!(results, (; path=possible_license, licensecheck(text)...))
     end
-    sort!(results, by = x -> x.percent_covered)
+    sort!(results; by = x -> x.percent_covered, rev=true)
     return results
 end
 
