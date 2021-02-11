@@ -97,12 +97,9 @@ with size less than $CUTOFF and [`find_licenses_by_list_intersection`](@ref) for
 
 ```julia
 julia> find_licenses(".")
-5-element Vector{NamedTuple{(:path, :licenses, :percent_covered), Tuple{String, Vector{String}, Float64}}}:
+1-element Vector{NamedTuple{(:path, :licenses, :percent_covered), Tuple{String, Vector{String}, Float64}}}:
  (path = "./LICENSE", licenses = ["MIT"], percent_covered = 98.82352941176471)
- (path = "./.gitignore", licenses = [], percent_covered = 0.0)
- (path = "./Manifest.toml", licenses = [], percent_covered = 0.0)
- (path = "./Project.toml", licenses = [], percent_covered = 0.0)
- (path = "./README.md", licenses = [], percent_covered = 0.0)
+
 ```
 """
 function find_licenses(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES)
@@ -119,6 +116,13 @@ end
 
 Returns the license with the highest `percent_covered` from [`find_licenses`](@ref). If file
 is found with any license content, returns `nothing`.
+
+## Example
+```julia
+julia> find_license(".")
+(path = "./LICENSE", licenses = ["MIT"], percent_covered = 98.82352941176471)
+
+```
 """
 function find_license(dir; kwargs...)
     table = find_licenses(dir; kwargs...)

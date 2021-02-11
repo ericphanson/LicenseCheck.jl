@@ -58,45 +58,50 @@ dorian_gray = """
     There is no such thing as a moral or an immoral book.  Books are well
     written, or badly written.  That is all."""
 
-@testset "`licensecheck`" begin
-    result = licensecheck(MIT)
-    @test result.licenses == ["MIT"]
-    @test result.percent_covered ≈ 100.0 atol = 2
+@testset "LicenseCheck" begin
+    @testset "`licensecheck`" begin
+        result = licensecheck(MIT)
+        @test result.licenses == ["MIT"]
+        @test result.percent_covered ≈ 100.0 atol = 2
 
-    result = licensecheck(MIT * "\n" * Latex2e)
-    @test result.licenses == ["MIT", "Latex2e"]
-    @test result.percent_covered ≈ 100.0 atol = 2
+        result = licensecheck(MIT * "\n" * Latex2e)
+        @test result.licenses == ["MIT", "Latex2e"]
+        @test result.percent_covered ≈ 100.0 atol = 2
 
-    result = licensecheck(MIT * "\n" * dorian_gray)
-    @test result.licenses == ["MIT"]
-    @test result.percent_covered ≈ 100 * length(MIT) / (length(dorian_gray) + length(MIT)) atol = 5
+        result = licensecheck(MIT * "\n" * dorian_gray)
+        @test result.licenses == ["MIT"]
+        @test result.percent_covered ≈ 100 * length(MIT) / (length(dorian_gray) + length(MIT)) atol = 5
 
-    result = licensecheck(MIT * "\n" * dorian_gray * "\n" * Latex2e)
-    @test result.licenses == ["MIT", "Latex2e"]
-    @test result.percent_covered ≈
-          100 * (length(MIT) + length(Latex2e)) /
-          (length(dorian_gray) + length(MIT) + length(Latex2e)) atol = 5
-end
-
-@testset "`is_osi_approved`" begin
-    @test is_osi_approved("MIT") == true
-    @test is_osi_approved("ABC") == false
-end
-
-
-@testset "`find_licenses_*`" begin
-    fl = find_license(joinpath(@__DIR__, ".."))
-    # check it found the right one
-    @test fl.path == joinpath(@__DIR__, "..", "LICENSE")
-    @test fl.licenses == ["MIT"]
-    @test fl.percent_covered > 90
-
-    for method in (find_licenses, find_licenses_by_bruteforce, find_licenses_by_list_intersection)
-        results = method(joinpath(@__DIR__, ".."))
-        @test only(results) == fl
+        result = licensecheck(MIT * "\n" * dorian_gray * "\n" * Latex2e)
+        @test result.licenses == ["MIT", "Latex2e"]
+        @test result.percent_covered ≈
+            100 * (length(MIT) + length(Latex2e)) /
+            (length(dorian_gray) + length(MIT) + length(Latex2e)) atol = 5
     end
 
-    # this can return more than 1 result due to case-insenitivity issues
-    results = find_licenses_by_list(joinpath(@__DIR__, ".."))
-    @test fl ∈ results
+    @testset "`is_osi_approved`" begin
+        @test is_osi_approved("MIT") == true
+        @test is_osi_approved("ABC") == false
+
+        @test is_osi_approved(find_license(pkgdir(LicenseCheck))) == true
+        @test is_osi_approved((; licenses = ["MIT", "MIT"]))
+    end
+
+
+    @testset "`find_licenses_*`" begin
+        fl = find_license(joinpath(@__DIR__, ".."))
+        # check it found the right one
+        @test fl.path == joinpath(@__DIR__, "..", "LICENSE")
+        @test fl.licenses == ["MIT"]
+        @test fl.percent_covered > 90
+
+        for method in (find_licenses, find_licenses_by_bruteforce, find_licenses_by_list_intersection)
+            results = method(joinpath(@__DIR__, ".."))
+            @test only(results) == fl
+        end
+
+        # this can return more than 1 result due to case-insenitivity issues
+        results = find_licenses_by_list(joinpath(@__DIR__, ".."))
+        @test fl ∈ results
+    end
 end
