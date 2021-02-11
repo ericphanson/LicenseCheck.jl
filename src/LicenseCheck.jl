@@ -2,7 +2,7 @@ module LicenseCheck
 
 using licensecheck_jll: licensecheck_jll
 
-export licensecheck, is_osi_approved
+export licensecheck, is_osi_approved, find_possible_licenses, find_best_license
 
 include("OSI_LICENSES.jl")
 
@@ -55,5 +55,38 @@ true
 ```
 """
 is_osi_approved(spdx_identifier::String) = spdx_identifier ∈ OSI_LICENSES
+
+# the largest license in `https://github.com/spdx/license-list-data/blob/v3.10/text`
+# is the `APL-1.0` license which is 45 KB.
+# We take a factor of 10 larger, to allow for
+# compound licenses.
+const LICENSE_MAX_SIZE_IN_BYTES = 45958*10
+
+possible_license(file) = isfile(file) && stat(file).size < LICENSE_MAX_SIZE_IN_BYTES
+
+"""
+    find_possible_licenses(dir) -> Vector{@NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}}
+
+Compiles a table of possible licenses (i.e. plaintext files smaller than $(LICENSE_MAX_SIZE_IN_BYTES ÷ 1000) KiB) at the top-level of a directory `dir` with their path and the results of [`licensecheck`](@ref), sorted by
+`percent_covered`.
+"""
+function find_possible_licenses(dir)
+    possible_licenses = filter(possible_license, readdir(dir; join=true))
+    results = @NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}[]
+    for possible_license in possible_licenses
+        text = read(possible_license, String)
+        isvalid(String, text) || continue
+        push!(results, (; path=possible_license, licensecheck(text)...))
+    end
+    sort!(results, by = x -> x.percent_covered)
+    return results
+end
+
+"""
+    find_best_license(dir) -> @NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}
+
+Returns the license with the highest `percent_covered` from [`find_possible_licenses`](@ref).
+"""
+find_best_license(dir) = find_possible_licenses(dir)[1]
 
 end
