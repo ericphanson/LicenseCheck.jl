@@ -10,8 +10,8 @@ const LICENSE_NAMES = let
     names = ("LICENSE", "LICENCE", "COPYING", "NOTICE", "COPYRIGHT") ∪ OSI_LICENSES
     name_cases = (uppercase, uppercasefirst, lowercase)
     ext_cases = (uppercase, lowercase)
-    extensions = ("md", "txt", "", "rst")
-    Set(string(case(name), ".", extcase(ext)) for name in names, case in name_cases, ext in extensions, extcase in ext_cases)
+    extensions = (".md", ".txt", "", ".rst")
+    Set(string(case(name), extcase(ext)) for name in names, case in name_cases, ext in extensions, extcase in ext_cases)
 end
 
 # only ~500 items this way
@@ -25,16 +25,19 @@ readfiles(dir) = filter!(f -> isfile(joinpath(dir, f)), readdir(dir))
 
 # constructs a table of `licensecheck` results
 function license_table(dir, names; validate_strings = true, validate_paths = true)
-    results = LICENSE_TABLE_TYPE()
+    table = LICENSE_TABLE_TYPE()
     for lic in names
         path = joinpath(dir, lic)
         validate_paths && (isfile(path) || continue)
         text = read(path, String)
         validate_strings && (isvalid(String, text) || continue)
-        push!(results, (; path, licensecheck(text)...))
+        lc = licensecheck(text)
+        if lc.percent_covered > 0
+            push!(table, (; path, lc...))
+        end
     end
-    sort!(results; by = x -> x.percent_covered, rev=true)
-    return results
+    sort!(table; by = x -> x.percent_covered, rev=true)
+    return table
 end
 
 """
@@ -112,8 +115,12 @@ function find_licenses(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES)
 end
 
 """
-    find_license(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES) -> $(LICENSE_TABLE_TYPE_STRING)
+    find_license(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES) -> Union{Nothing, @NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}}
 
-Returns the license with the highest `percent_covered` from [`find_licenses`](@ref).
+Returns the license with the highest `percent_covered` from [`find_licenses`](@ref). If file
+is found with any license content, returns `nothing`.
 """
-find_license(dir; kwargs...) = find_licenses(dir; kwargs...)[1]
+function find_license(dir; kwargs...)
+    table = find_licenses(dir; kwargs...)
+    return isempty(table) ? nothing : table[1]
+end

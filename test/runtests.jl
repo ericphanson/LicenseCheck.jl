@@ -82,3 +82,21 @@ end
     @test is_osi_approved("MIT") == true
     @test is_osi_approved("ABC") == false
 end
+
+
+@testset "`find_licenses_*`" begin
+    fl = find_license(joinpath(@__DIR__, ".."))
+    # check it found the right one
+    @test fl.path == joinpath(@__DIR__, "..", "LICENSE")
+    @test fl.licenses == ["MIT"]
+    @test fl.percent_covered > 90
+
+    for method in (find_licenses, find_licenses_by_bruteforce, find_licenses_by_list_intersection)
+        results = method(joinpath(@__DIR__, ".."))
+        @test only(results) == fl
+    end
+
+    # this can return more than 1 result due to case-insenitivity issues
+    results = find_licenses_by_list(joinpath(@__DIR__, ".."))
+    @test fl ∈ results
+end
