@@ -85,6 +85,7 @@ dorian_gray = """
 
         @test is_osi_approved(find_license(pkgdir(LicenseCheck))) == true
         @test is_osi_approved((; licenses = ["MIT", "MIT"]))
+        @test !is_osi_approved((; licenses = String[]))
     end
 
 

@@ -64,7 +64,7 @@ true
 ```
 """
 is_osi_approved(spdx_identifier::String) = spdx_identifier ∈ OSI_LICENSES
-is_osi_approved(nt::NamedTuple) = all(is_osi_approved, nt.licenses)
+is_osi_approved(nt::NamedTuple) = !isempty(nt.licenses) && all(is_osi_approved, nt.licenses)
 
 
 end # module
