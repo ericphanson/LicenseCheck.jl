@@ -21,15 +21,18 @@ julia> using LicenseCheck
 julia> text = read(joinpath(pkgdir(LicenseCheck), "LICENSE"), String);
 
 julia> result = licensecheck(text)
-(licenses = ["MIT"], percent_covered = 98.82352941176471)
+(licenses_found = ["MIT"], license_file_percent_covered = 98.82352941176471)
 
-julia> all(is_osi_approved, result.licenses)
+julia> all(is_osi_approved, result.licenses_found)
 true
 
 julia> is_osi_approved(result) # convenience method for the above
 true
 
 julia> find_license(pkgdir(LicenseCheck))
-(path = ".../LicenseCheck/LICENSE", licenses = ["MIT"], percent_covered = 98.82352941176471) # path edited for brevity
+(license_filename = "LICENSE", licenses_found = ["MIT"], license_file_percent_covered = 98.82352941176471)
+
+julia> is_osi_approved(find_license(pkgdir(LicenseCheck)))
+true
 
 ```

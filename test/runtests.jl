@@ -61,20 +61,20 @@ dorian_gray = """
 @testset "LicenseCheck" begin
     @testset "`licensecheck`" begin
         result = licensecheck(MIT)
-        @test result.licenses == ["MIT"]
-        @test result.percent_covered ≈ 100.0 atol = 2
+        @test result.licenses_found == ["MIT"]
+        @test result.license_file_percent_covered ≈ 100.0 atol = 2
 
         result = licensecheck(MIT * "\n" * Latex2e)
-        @test result.licenses == ["MIT", "Latex2e"]
-        @test result.percent_covered ≈ 100.0 atol = 2
+        @test result.licenses_found == ["MIT", "Latex2e"]
+        @test result.license_file_percent_covered ≈ 100.0 atol = 2
 
         result = licensecheck(MIT * "\n" * dorian_gray)
-        @test result.licenses == ["MIT"]
-        @test result.percent_covered ≈ 100 * length(MIT) / (length(dorian_gray) + length(MIT)) atol = 5
+        @test result.licenses_found == ["MIT"]
+        @test result.license_file_percent_covered ≈ 100 * length(MIT) / (length(dorian_gray) + length(MIT)) atol = 5
 
         result = licensecheck(MIT * "\n" * dorian_gray * "\n" * Latex2e)
-        @test result.licenses == ["MIT", "Latex2e"]
-        @test result.percent_covered ≈
+        @test result.licenses_found == ["MIT", "Latex2e"]
+        @test result.license_file_percent_covered ≈
             100 * (length(MIT) + length(Latex2e)) /
             (length(dorian_gray) + length(MIT) + length(Latex2e)) atol = 5
     end
@@ -84,17 +84,17 @@ dorian_gray = """
         @test is_osi_approved("ABC") == false
 
         @test is_osi_approved(find_license(pkgdir(LicenseCheck))) == true
-        @test is_osi_approved((; licenses = ["MIT", "MIT"]))
-        @test !is_osi_approved((; licenses = String[]))
+        @test is_osi_approved((; licenses_found = ["MIT", "MIT"]))
+        @test !is_osi_approved((; licenses_found = String[]))
     end
 
 
     @testset "`find_licenses_*`" begin
         fl = find_license(joinpath(@__DIR__, ".."))
         # check it found the right one
-        @test fl.path == joinpath(@__DIR__, "..", "LICENSE")
-        @test fl.licenses == ["MIT"]
-        @test fl.percent_covered > 90
+        @test fl.license_filename == "LICENSE"
+        @test fl.licenses_found == ["MIT"]
+        @test fl.license_file_percent_covered > 90
 
         for method in (find_licenses, dir -> find_licenses(dir; allow_brute=false), find_licenses_by_bruteforce, find_licenses_by_list_intersection)
             results = method(joinpath(@__DIR__, ".."))

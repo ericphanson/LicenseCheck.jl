@@ -17,8 +17,8 @@ end
 # only ~500 items this way
 const LOWERCASE_LICENSE_NAMES = Set(lowercase(lic) for lic in LICENSE_NAMES)
 
-const LICENSE_TABLE_TYPE = Vector{@NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}}
-const LICENSE_TABLE_TYPE_STRING = "Vector{@NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}}"
+const LICENSE_TABLE_TYPE = Vector{@NamedTuple{license_filename::String, licenses_found::Vector{String}, license_file_percent_covered::Float64}}
+const LICENSE_TABLE_TYPE_STRING = "Vector{@NamedTuple{license_filename::String, licenses_found::Vector{String}, license_file_percent_covered::Float64}}"
 
 # like `readdir`, but returns only files
 readfiles(dir) = filter!(f -> isfile(joinpath(dir, f)), readdir(dir))
@@ -32,11 +32,11 @@ function license_table(dir, names; validate_strings = true, validate_paths = tru
         text = read(path, String)
         validate_strings && (isvalid(String, text) || continue)
         lc = licensecheck(text)
-        if lc.percent_covered > 0
-            push!(table, (; path, lc...))
+        if lc.license_file_percent_covered > 0
+            push!(table, (; license_filename=lic, lc...))
         end
     end
-    sort!(table; by = x -> x.percent_covered, rev=true)
+    sort!(table; by = x -> x.license_file_percent_covered, rev=true)
     return table
 end
 
@@ -46,7 +46,7 @@ end
 Checks to see if any license name in `LicenseCheck.LICENSE_NAMES` exists
 in `dir`, and if so, calls [`licensecheck`](@ref) on it. Returns the results
 of all existing licenses and their `licensecheck` values, sorted from highest
-`percent_covered` to lowest.
+`license_file_percent_covered` to lowest.
 
 Operates by filtering the results of `readdir`, which should be efficient
 for small and moderately sized directories. See [`find_licenses_by_list`](@ref)
@@ -63,7 +63,7 @@ end
 Checks to see if any license name in `LicenseCheck.LICENSE_NAMES` exists
 in `dir`, and if so, calls [`licensecheck`](@ref) on it. Returns the results
 of all existing licenses and their `licensecheck` values, sorted from highest
-`percent_covered` to lowest.
+`license_file_percent_covered` to lowest.
 
 This function does not ever call `readdir(dir)` and instead just checks if each
 of the $(length(LICENSE_NAMES)) names in `LicenseCheck.LICENSE_NAMES` exists,
@@ -90,7 +90,7 @@ const CUTOFF = 100
 """
     find_licenses(dir; allow_brute=true, max_bytes = MAX_LICENSE_SIZE_IN_BYTES) -> $(LICENSE_TABLE_TYPE_STRING)
 
-Compiles a table of possible licenses at the top-level of a directory `dir` with their path and the results of [`licensecheck`](@ref), sorted by `percent_covered`. Uses [`find_licenses_by_bruteforce`](@ref) for directories
+Compiles a table of possible licenses at the top-level of a directory `dir` with their path and the results of [`licensecheck`](@ref), sorted by `license_file_percent_covered`. Uses [`find_licenses_by_bruteforce`](@ref) for directories
 with size less than $CUTOFF and [`find_licenses_by_list_intersection`](@ref) for larger directories.
 
 Simply acts as an alias for [`find_licenses_by_list_intersection`](@ref) if `allow_brute=false`.
@@ -99,8 +99,8 @@ Simply acts as an alias for [`find_licenses_by_list_intersection`](@ref) if `all
 
 ```julia
 julia> find_licenses(".")
-1-element Vector{NamedTuple{(:path, :licenses, :percent_covered), Tuple{String, Vector{String}, Float64}}}:
- (path = "./LICENSE", licenses = ["MIT"], percent_covered = 98.82352941176471)
+1-element Vector{NamedTuple{(:license_filename, :licenses_found, :license_file_percent_covered), Tuple{String, Vector{String}, Float64}}}:
+ (license_filename = "LICENSE", licenses_found = ["MIT"], license_file_percent_covered = 98.82352941176471)
 
 ```
 """
@@ -114,15 +114,15 @@ function find_licenses(dir; allow_brute=true, max_bytes = MAX_LICENSE_SIZE_IN_BY
 end
 
 """
-    find_license(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES) -> Union{Nothing, @NamedTuple{path::String, licenses::Vector{String}, percent_covered::Float64}}
+    find_license(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES) -> Union{Nothing, @NamedTuple{license_filename::String, licenses_found::Vector{String}, license_file_percent_covered::Float64}}
 
-Returns the license with the highest `percent_covered` from [`find_licenses`](@ref). If file
+Returns the license with the highest `license_file_percent_covered` from [`find_licenses`](@ref). If file
 is found with any license content, returns `nothing`.
 
 ## Example
 ```julia
 julia> find_license(".")
-(path = "./LICENSE", licenses = ["MIT"], percent_covered = 98.82352941176471)
+(license_filename = "LICENSE", licenses_found = ["MIT"], license_file_percent_covered = 98.82352941176471)
 
 ```
 """
