@@ -81,6 +81,7 @@ dorian_gray = """
 
     @testset "`is_osi_approved`" begin
         @test is_osi_approved("MIT") == true
+        @test is_osi_approved("LGPL-3.0") == true
         @test is_osi_approved("ABC") == false
 
         @test is_osi_approved(find_license(pkgdir(LicenseCheck))) == true
