@@ -8,7 +8,7 @@ spdx = JSON3.read(String(r.body))
 
 osi_licenses = sort!([lic.licenseId
                       for lic in spdx.licenses
-                      if lic.isOsiApproved && !lic.isDeprecatedLicenseId])
+                      if lic.isOsiApproved])
 
 open(joinpath(@__DIR__, "..", "src", "OSI_LICENSES.jl"); write=true) do io
     header = """
