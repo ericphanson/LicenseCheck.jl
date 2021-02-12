@@ -96,7 +96,7 @@ dorian_gray = """
         @test fl.licenses == ["MIT"]
         @test fl.percent_covered > 90
 
-        for method in (find_licenses, find_licenses_by_bruteforce, find_licenses_by_list_intersection)
+        for method in (find_licenses, dir -> find_licenses(dir; allow_brute=false), find_licenses_by_bruteforce, find_licenses_by_list_intersection)
             results = method(joinpath(@__DIR__, ".."))
             @test only(results) == fl
         end
