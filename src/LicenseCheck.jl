@@ -61,10 +61,13 @@ true
 julia> is_osi_approved(find_license(pkgdir(LicenseCheck)))
 true
 
+julia> is_osi_approved(find_license(homedir(), allow_brute=false)) # no license there
+false
+
 ```
 """
 is_osi_approved(spdx_identifier::String) = spdx_identifier ∈ OSI_LICENSES
 is_osi_approved(nt::NamedTuple) = !isempty(nt.licenses) && all(is_osi_approved, nt.licenses)
-
+is_osi_approved(::Nothing) = false # so that it can always be used with `find_license`
 
 end # module

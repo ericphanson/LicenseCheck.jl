@@ -88,10 +88,12 @@ end
 const CUTOFF = 100
 
 """
-    find_licenses(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES) -> $(LICENSE_TABLE_TYPE_STRING)
+    find_licenses(dir; allow_brute=true, max_bytes = MAX_LICENSE_SIZE_IN_BYTES) -> $(LICENSE_TABLE_TYPE_STRING)
 
 Compiles a table of possible licenses at the top-level of a directory `dir` with their path and the results of [`licensecheck`](@ref), sorted by `percent_covered`. Uses [`find_licenses_by_bruteforce`](@ref) for directories
 with size less than $CUTOFF and [`find_licenses_by_list_intersection`](@ref) for larger directories.
+
+Simply acts as an alias for [`find_licenses_by_list_intersection`](@ref) if `allow_brute=false`.
 
 ## Example
 
@@ -102,9 +104,9 @@ julia> find_licenses(".")
 
 ```
 """
-function find_licenses(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES)
+function find_licenses(dir; allow_brute=true, max_bytes = MAX_LICENSE_SIZE_IN_BYTES)
     files = readfiles(dir)
-    if length(files) < CUTOFF
+    if allow_brute && (length(files) < CUTOFF)
         return find_licenses_by_bruteforce(dir; files, max_bytes)
     else
         return find_licenses_by_list_intersection(dir; files)
