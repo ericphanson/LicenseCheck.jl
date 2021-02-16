@@ -30,7 +30,9 @@ function license_table(dir, names; validate_strings = true, validate_paths = tru
         path = joinpath(dir, lic)
         validate_paths && (isfile(path) || continue)
         text = read(path, String)
-        validate_strings && (isvalid(String, text) || continue)
+        # In licensecheck we're going to convert the string to a `Cstring` with
+        # `unsafe_convert`, so the string can't have any NUL character
+        validate_strings && ((isvalid(String, text) && !Base.containsnul(text)) || continue)
         lc = licensecheck(text)
         if lc.license_file_percent_covered > 0
             push!(table, (; license_filename=lic, lc...))
