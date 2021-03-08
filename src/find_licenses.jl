@@ -17,7 +17,9 @@ end
 # only ~500 items this way
 const LOWERCASE_LICENSE_NAMES = Set(lowercase(lic) for lic in LICENSE_NAMES)
 
-const LICENSE_TABLE_TYPE = Vector{@NamedTuple{license_filename::String, licenses_found::Vector{String}, license_file_percent_covered::Float64}}
+const LICENSE_TABLE_TYPE = Vector{NamedTuple{(:license_filename, :licenses_found,
+                                              :license_file_percent_covered),
+                                             Tuple{String,Vector{String},Float64}}}
 const LICENSE_TABLE_TYPE_STRING = "Vector{@NamedTuple{license_filename::String, licenses_found::Vector{String}, license_file_percent_covered::Float64}}"
 
 # like `readdir`, but returns only files
@@ -109,9 +111,9 @@ julia> find_licenses(".")
 function find_licenses(dir; allow_brute=true, max_bytes = MAX_LICENSE_SIZE_IN_BYTES)
     files = readfiles(dir)
     if allow_brute && (length(files) < CUTOFF)
-        return find_licenses_by_bruteforce(dir; files, max_bytes)
+        return find_licenses_by_bruteforce(dir; files=files, max_bytes=max_bytes)
     else
-        return find_licenses_by_list_intersection(dir; files)
+        return find_licenses_by_list_intersection(dir; files=files)
     end
 end
 

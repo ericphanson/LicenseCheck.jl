@@ -1,6 +1,11 @@
 using LicenseCheck
 using Test
 
+if VERSION < v"1.4"
+    # backport a simple version of `only`
+    only(x) = (length(x) == 1 || error("Must have 1 element!"); first(x))
+end
+
 MIT = """
     MIT License Copyright (c) <year> <copyright holders>
 
@@ -83,8 +88,8 @@ dorian_gray = """
         @test is_osi_approved("MIT") == true
         @test is_osi_approved("LGPL-3.0") == true
         @test is_osi_approved("ABC") == false
-
-        @test is_osi_approved(find_license(pkgdir(LicenseCheck))) == true
+        VERSION >= v"1.5" &&
+            @test is_osi_approved(find_license(pkgdir(LicenseCheck))) == true
         @test !is_osi_approved(nothing) # for if `find_license` returns `nothing`
         @test is_osi_approved((; licenses_found = ["MIT", "MIT"]))
         @test !is_osi_approved((; licenses_found = String[]))

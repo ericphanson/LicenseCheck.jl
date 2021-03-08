@@ -34,7 +34,7 @@ function licensecheck(text::String)
                                        Tuple{Ptr{Ptr{UInt8}},Cint,Float64}, (Cstring,),
                                        text)
     return (; licenses_found=unsafe_string.(unsafe_wrap(Array, arr, dims; own=true)),
-            license_file_percent_covered)
+            license_file_percent_covered=license_file_percent_covered)
 end
 
 """
