@@ -2,7 +2,7 @@
 # is the `APL-1.0` license which is 45 KB.
 # We take a factor of 10 larger, to allow for
 # compound licenses.
-const MAX_LICENSE_SIZE_IN_BYTES = 45958*10
+const MAX_LICENSE_SIZE_IN_BYTES = 45958 * 10
 
 # Based on
 # https://github.com/ericphanson/LicenseCheck.jl/issues/2#issue-805995984
@@ -11,20 +11,23 @@ const LICENSE_NAMES = let
     name_cases = (uppercase, uppercasefirst, lowercase)
     ext_cases = (uppercase, lowercase)
     extensions = (".md", ".txt", "", ".rst")
-    Set(string(case(name), extcase(ext)) for name in names, case in name_cases, ext in extensions, extcase in ext_cases)
+    Set(string(case(name), extcase(ext))
+        for name in names, case in name_cases, ext in extensions, extcase in ext_cases)
 end
 
 # only ~500 items this way
 const LOWERCASE_LICENSE_NAMES = Set(lowercase(lic) for lic in LICENSE_NAMES)
 
-const LICENSE_TABLE_TYPE = Vector{@NamedTuple{license_filename::String, licenses_found::Vector{String}, license_file_percent_covered::Float64}}
+const LICENSE_TABLE_TYPE = Vector{NamedTuple{(:license_filename, :licenses_found,
+                                              :license_file_percent_covered),
+                                             Tuple{String,Vector{String},Float64}}}
 const LICENSE_TABLE_TYPE_STRING = "Vector{@NamedTuple{license_filename::String, licenses_found::Vector{String}, license_file_percent_covered::Float64}}"
 
 # like `readdir`, but returns only files
 readfiles(dir) = filter!(f -> isfile(joinpath(dir, f)), readdir(dir))
 
 # constructs a table of `licensecheck` results
-function license_table(dir, names; validate_strings = true, validate_paths = true)
+function license_table(dir, names; validate_strings=true, validate_paths=true)
     table = LICENSE_TABLE_TYPE()
     for lic in names
         path = joinpath(dir, lic)
@@ -38,7 +41,7 @@ function license_table(dir, names; validate_strings = true, validate_paths = tru
             push!(table, (; license_filename=lic, lc...))
         end
     end
-    sort!(table; by = x -> x.license_file_percent_covered, rev=true)
+    sort!(table; by=x -> x.license_file_percent_covered, rev=true)
     return table
 end
 
@@ -54,9 +57,9 @@ Operates by filtering the results of `readdir`, which should be efficient
 for small and moderately sized directories. See [`find_licenses_by_list`](@ref)
 for an alternate approach for very large directories.
 """
-function find_licenses_by_list_intersection(dir; files = readfiles(dir))
+function find_licenses_by_list_intersection(dir; files=readfiles(dir))
     names = filter!(lic -> lowercase(lic) ∈ LOWERCASE_LICENSE_NAMES, files)
-    return license_table(dir, names; validate_paths = false)
+    return license_table(dir, names; validate_paths=false)
 end
 
 """
@@ -82,9 +85,10 @@ find_licenses_by_list(dir) = license_table(dir, LICENSE_NAMES)
 Calls [`licensecheck`](@ref) on every plaintext file in `dir` whose size is less than `max_bytes`,
 returning the results as a table. The parameter `max_bytes` defaults to $(MAX_LICENSE_SIZE_IN_BYTES ÷ 1000) KiB.
 """
-function find_licenses_by_bruteforce(dir; max_bytes = MAX_LICENSE_SIZE_IN_BYTES, files = readfiles(dir))
+function find_licenses_by_bruteforce(dir; max_bytes=MAX_LICENSE_SIZE_IN_BYTES,
+                                     files=readfiles(dir))
     names = filter!(file -> stat(joinpath(dir, file)).size < max_bytes, files)
-    return license_table(dir, names; validate_paths = false)
+    return license_table(dir, names; validate_paths=false)
 end
 
 const CUTOFF = 100
@@ -106,12 +110,12 @@ julia> find_licenses(".")
 
 ```
 """
-function find_licenses(dir; allow_brute=true, max_bytes = MAX_LICENSE_SIZE_IN_BYTES)
+function find_licenses(dir; allow_brute=true, max_bytes=MAX_LICENSE_SIZE_IN_BYTES)
     files = readfiles(dir)
     if allow_brute && (length(files) < CUTOFF)
-        return find_licenses_by_bruteforce(dir; files, max_bytes)
+        return find_licenses_by_bruteforce(dir; files=files, max_bytes=max_bytes)
     else
-        return find_licenses_by_list_intersection(dir; files)
+        return find_licenses_by_list_intersection(dir; files=files)
     end
 end
 
