@@ -4,7 +4,8 @@ using licensecheck_jll: licensecheck_jll
 
 export licensecheck, is_osi_approved
 export find_licenses, find_license
-export find_licenses_by_bruteforce, find_licenses_by_list, find_licenses_by_list_intersection
+export find_licenses_by_bruteforce, find_licenses_by_list,
+       find_licenses_by_list_intersection
 
 include("OSI_LICENSES.jl")
 include("find_licenses.jl")
@@ -30,9 +31,10 @@ julia> licensecheck(text)
 ```
 """
 function licensecheck(text::String)
-    arr, dims, license_file_percent_covered = ccall((:License, licensecheck_jll.licensecheck),
-                                       Tuple{Ptr{Ptr{UInt8}},Cint,Float64}, (Cstring,),
-                                       text)
+    arr, dims, license_file_percent_covered = ccall((:License,
+                                                     licensecheck_jll.licensecheck),
+                                                    Tuple{Ptr{Ptr{UInt8}},Cint,Float64},
+                                                    (Cstring,), text)
     return (; licenses_found=unsafe_string.(unsafe_wrap(Array, arr, dims; own=true)),
             license_file_percent_covered=license_file_percent_covered)
 end
@@ -67,7 +69,9 @@ false
 ```
 """
 is_osi_approved(spdx_identifier::String) = spdx_identifier ∈ OSI_LICENSES
-is_osi_approved(nt::NamedTuple) = !isempty(nt.licenses_found) && all(is_osi_approved, nt.licenses_found)
+function is_osi_approved(nt::NamedTuple)
+    return !isempty(nt.licenses_found) && all(is_osi_approved, nt.licenses_found)
+end
 is_osi_approved(::Nothing) = false # so that it can always be used with `find_license`
 
 end # module

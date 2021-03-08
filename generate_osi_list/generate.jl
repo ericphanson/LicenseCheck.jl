@@ -6,9 +6,7 @@ spdx = JSON3.read(String(r.body))
 
 @assert spdx.licenseListVersion == "3.10"
 
-osi_licenses = sort!([lic.licenseId
-                      for lic in spdx.licenses
-                      if lic.isOsiApproved])
+osi_licenses = sort!([lic.licenseId for lic in spdx.licenses if lic.isOsiApproved])
 
 open(joinpath(@__DIR__, "..", "src", "OSI_LICENSES.jl"); write=true) do io
     header = """
