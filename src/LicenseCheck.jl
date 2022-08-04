@@ -70,8 +70,6 @@ false
 """
 is_osi_approved(spdx_identifier::String) = spdx_identifier ∈ OSI_LICENSES
 function is_osi_approved(nt::NamedTuple)
-    # Test
-    error("nope")
     return !isempty(nt.licenses_found) && all(is_osi_approved, nt.licenses_found)
 end
 is_osi_approved(::Nothing) = false # so that it can always be used with `find_license`
