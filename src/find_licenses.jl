@@ -27,7 +27,7 @@ const LICENSE_TABLE_TYPE_STRING = "Vector{@NamedTuple{license_filename::String, 
 readfiles(dir) = filter!(f -> isfile(joinpath(dir, f)), readdir(dir))
 
 # constructs a table of `licensecheck` results
-function license_table(dir, names; validate_strings=true, validate_paths=true)
+function license_table(dir, names; validate_strings=true, validate_paths=true, preserve_path= false)
     table = LICENSE_TABLE_TYPE()
     for lic in names
         path = joinpath(dir, lic)
@@ -38,7 +38,8 @@ function license_table(dir, names; validate_strings=true, validate_paths=true)
         validate_strings && ((isvalid(String, text) && !Base.containsnul(text)) || continue)
         lc = licensecheck(text)
         if lc.license_file_percent_covered > 0
-            push!(table, (; license_filename=lic, lc...))
+            licpath= true== preserve_path ? path : lic 
+            push!(table, (; license_filename=licpath, lc...))
         end
     end
     sort!(table; by=x -> x.license_file_percent_covered, rev=true)
@@ -57,9 +58,9 @@ Operates by filtering the results of `readdir`, which should be efficient
 for small and moderately sized directories. See [`find_licenses_by_list`](@ref)
 for an alternate approach for very large directories.
 """
-function find_licenses_by_list_intersection(dir; files=readfiles(dir))
+function find_licenses_by_list_intersection(dir; files=readfiles(dir), preserve_path= false)
     names = filter!(lic -> lowercase(lic) ∈ LOWERCASE_LICENSE_NAMES, files)
-    return license_table(dir, names; validate_paths=false)
+    return license_table(dir, names; validate_paths=false, preserve_path= preserve_path)
 end
 
 """
@@ -86,9 +87,9 @@ Calls [`licensecheck`](@ref) on every plaintext file in `dir` whose size is less
 returning the results as a table. The parameter `max_bytes` defaults to $(MAX_LICENSE_SIZE_IN_BYTES ÷ 1000) KiB.
 """
 function find_licenses_by_bruteforce(dir; max_bytes=MAX_LICENSE_SIZE_IN_BYTES,
-                                     files=readfiles(dir))
+                                     files=readfiles(dir), preserve_path= false)
     names = filter!(file -> stat(joinpath(dir, file)).size < max_bytes, files)
-    return license_table(dir, names; validate_paths=false)
+    return license_table(dir, names; validate_paths=false, preserve_path= preserve_path)
 end
 
 const CUTOFF = 100
@@ -110,13 +111,24 @@ julia> find_licenses(".")
 
 ```
 """
-function find_licenses(dir; allow_brute=true, max_bytes=MAX_LICENSE_SIZE_IN_BYTES)
-    files = readfiles(dir)
-    if allow_brute && (length(files) < CUTOFF)
-        return find_licenses_by_bruteforce(dir; files=files, max_bytes=max_bytes)
-    else
-        return find_licenses_by_list_intersection(dir; files=files)
+function find_licenses(dir; allow_brute=true, max_bytes=MAX_LICENSE_SIZE_IN_BYTES, scan_subdir= false)
+    preserve_path= true == scan_subdir ? true : false
+
+    licenses_list= Vector{NamedTuple{(:license_filename, :licenses_found, :license_file_percent_covered), Tuple{String, Vector{String}, Float64}}}[]
+    for dirdata in walkdir(dir)
+        root= dirdata[1]
+        files= dirdata[3]
+        if allow_brute && (length(files) < CUTOFF)
+            licenses_found= find_licenses_by_bruteforce(root; files=files, max_bytes=max_bytes, preserve_path= preserve_path)
+        else
+            licenses_found= find_licenses_by_list_intersection(root; files=files, preserve_path= preserve_path)
+        end
+        licenses_list= isempty(licenses_found) ? licenses_list : vcat(licenses_list, licenses_found)
+
+        false == scan_subdir  &&  break
     end
+
+    return licenses_list
 end
 
 """
