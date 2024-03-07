@@ -114,6 +114,17 @@ dorian_gray = """
         @test fl ∈ results
     end
 
+    @testset "`find_licenses` in subdirectories" begin
+        fl= find_licenses("..", scan_subdir= true)
+        @test length(fl) == 3
+        lic1= filter(l -> l.license_filename== "../LICENSE", fl)[1]
+        @test lic1.licenses_found == ["MIT"]
+        lic2= filter(l -> l.license_filename== "../test/runtests.jl", fl)[1]
+        @test issetequal(lic2.licenses_found, ["MIT", "Latex2e"])
+        lic3= filter(l -> l.license_filename== "../test/nul_string_dir/LICENSE", fl)[1]
+        @test lic3.licenses_found== ["MIT"]
+    end
+
     @testset "AnalyzeRegistry#14" begin
         fl = find_license("nul_string_dir")
         @test fl.license_filename == "LICENSE"
