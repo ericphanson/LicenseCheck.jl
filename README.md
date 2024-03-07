@@ -35,4 +35,11 @@ julia> find_license(pkgdir(LicenseCheck))
 julia> is_osi_approved(find_license(pkgdir(LicenseCheck)))
 true
 
+julia> cd(pkgdir(LicenseCheck))
+julia> find_licenses(".", scan_subdir= true)
+3-element Vector{@NamedTuple{license_filename::String, licenses_found::Vector{String}, license_file_percent_covered::Float64}}:
+ (license_filename = "./LICENSE", licenses_found = ["MIT"], license_file_percent_covered = 98.82352941176471)
+ (license_filename = "./test/runtests.jl", licenses_found = ["MIT", "Latex2e"], license_file_percent_covered = 34.130982367758186)
+ (license_filename = "./test/nul_string_dir/LICENSE", licenses_found = ["MIT"], license_file_percent_covered = 98.82352941176471)
+
 ```
