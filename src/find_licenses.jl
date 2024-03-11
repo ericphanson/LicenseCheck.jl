@@ -129,7 +129,7 @@ function find_licenses(dir; allow_brute=true, max_bytes=MAX_LICENSE_SIZE_IN_BYTE
     for dirdata in walkdir(dir)
         root= dirdata[1]
         files= dirdata[3]
-        files= [f for f in files if isfile(joinpath(root, f))]  # Remove anything that isn't an actual file, i.e. a broken symlink symlinks to directories
+        files= [f for f in files if isfile(joinpath(root, f))]  # Remove anything that isn't an actual file, i.e. a broken symlink or symlinks to directories
         if allow_brute && (length(files) < CUTOFF)
             licenses_found= find_licenses_by_bruteforce(root; files=files, max_bytes=max_bytes, preserve_path= preserve_path)
         else
