@@ -11,7 +11,20 @@ include("OSI_LICENSES.jl")
 include("find_licenses.jl")
 
 # lib_path = licensecheck_jll.licensecheck
-lib_path = joinpath(pkgdir(LicenseCheck), "build", "lib", "licensecheck.dylib")
+wrapper_lib_path = joinpath(pkgdir(LicenseCheck), "build", "lib", "licensecheck.dylib")
+go_lib_path = joinpath(pkgdir(LicenseCheck), "build", "lib", "licensecheck_go.dylib")
+
+# Signal handler conflict mitigation:
+# We use a C wrapper that saves/restores signal handlers around Go library loading.
+# This prevents conflicts between Go's runtime and Julia's signal handling.
+
+function __init__()
+    # Initialize the C wrapper, which loads the Go library with signal handler protection
+    ret = ccall((:wrapper_init, wrapper_lib_path), Cint, (Cstring,), go_lib_path)
+    if ret != 0
+        error("Failed to initialize licensecheck wrapper library")
+    end
+end
 
 """
     licensecheck(text::String) -> @NamedTuple{licenses_found::Vector{String}, license_file_percent_covered::Float64}
@@ -34,7 +47,7 @@ julia> licensecheck(text)
 ```
 """
 function licensecheck(text::String)
-    arr, dims, license_file_percent_covered = ccall((:License, lib_path),
+    arr, dims, license_file_percent_covered = ccall((:License, wrapper_lib_path),
                                                     Tuple{Ptr{Ptr{UInt8}},Cint,Float64},
                                                     (Cstring,), text)
     return (; licenses_found=unsafe_string.(unsafe_wrap(Array, arr, dims; own=true)),
