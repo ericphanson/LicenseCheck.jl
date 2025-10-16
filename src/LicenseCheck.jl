@@ -10,6 +10,9 @@ export find_licenses_by_bruteforce, find_licenses_by_list,
 include("OSI_LICENSES.jl")
 include("find_licenses.jl")
 
+# lib_path = licensecheck_jll.licensecheck
+lib_path = joinpath(pkgdir(LicenseCheck), "build", "lib", "licensecheck.dylib")
+
 """
     licensecheck(text::String) -> @NamedTuple{licenses_found::Vector{String}, license_file_percent_covered::Float64}
 
@@ -31,8 +34,7 @@ julia> licensecheck(text)
 ```
 """
 function licensecheck(text::String)
-    arr, dims, license_file_percent_covered = ccall((:License,
-                                                     licensecheck_jll.licensecheck),
+    arr, dims, license_file_percent_covered = ccall((:License, lib_path),
                                                     Tuple{Ptr{Ptr{UInt8}},Cint,Float64},
                                                     (Cstring,), text)
     return (; licenses_found=unsafe_string.(unsafe_wrap(Array, arr, dims; own=true)),
@@ -48,7 +50,7 @@ Checks if a [SDPX 3.10 identifier](https://spdx.dev/ids/) is
 or if a `NamedTuple` with a `licenses_found` key contains only OSI-approved SDPX 3.10 identifiers.
 
 !!! warning
-    
+
     Note that [`licensecheck`](@ref) understands a larger number of licenses than
     SDPX 3.10, and can output results which are not SDPX 3.10 identifiers.
     Such licenses will yield `is_osi_approved(name) == false` regardless of

@@ -115,11 +115,12 @@ dorian_gray = """
     end
 
     @testset "AnalyzeRegistry#14" begin
-        fl = find_license("nul_string_dir")
+        nul_str_dir = joinpath(@__DIR__, "nul_string_dir")
+        fl = find_license(nul_str_dir)
         @test fl.license_filename == "LICENSE"
         @test fl.licenses_found == ["MIT"]
         @test fl.license_file_percent_covered > 90
-        @test_throws ArgumentError LicenseCheck.license_table("nul_string_dir",
+        @test_throws ArgumentError LicenseCheck.license_table(nul_str_dir,
                                                               ["file_with_nul_in_the_middle.txt"];
                                                               validate_strings=false)
     end
