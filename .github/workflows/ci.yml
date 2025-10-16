@@ -23,24 +23,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - '1.3'
-          - '1'
-          - 'nightly'
-        os:
-          - ubuntu-latest
-          - macOS-latest
-          - windows-latest
-        arch:
-          - x64
-          - x86
-          - aarch64
-        exclude:
-          - os: macOS-latest
+        version: ['1.3', '1', 'nightly']
+        include:
+          - os: ubuntu-latest   # allowed arches
+            arch: x64
+          - os: ubuntu-latest
             arch: x86
           - os: windows-latest
+            arch: x64
+          - os: windows-latest
+            arch: x86
+          - os: macos-latest
+            arch: x64
+          - os: macos-latest
             arch: aarch64
-          - os: ubuntu-latest
+        exclude:
+          - version: '1.3'
+            os: macos-latest
             arch: aarch64
     steps:
       - uses: actions/checkout@v5
