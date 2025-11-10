@@ -37,8 +37,18 @@ function licensecheck(text::String)
             licensecheck_jll.licensecheck),
         Tuple{Ptr{Ptr{UInt8}},Cint,Float64},
         (Cstring,), text)
-    return (; licenses_found=unsafe_string.(unsafe_wrap(Array, arr, dims; own=true)),
-        license_file_percent_covered=license_file_percent_covered)
+
+    try
+        licenses_found = unsafe_string.(unsafe_wrap(Array, arr, dims; own=false))
+        return (; licenses_found, license_file_percent_covered)
+    finally
+        ccall((:FreeLicenseResult,
+                licensecheck_jll.licensecheck),
+            Nothing,
+            (Ptr{Ptr{UInt8}}, Cint),
+            arr, dims)
+
+    end
 end
 
 """
