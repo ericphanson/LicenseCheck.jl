@@ -1,7 +1,7 @@
 name = "LicenseCheck"
 uuid = "726dbf0d-6eb6-41af-b36c-cd770e0f00cc"
 authors = ["Eric P. Hanson"]
-version = "0.3.0"
+version = "0.2.3"
 
 [deps]
 licensecheck_jll = "4ecb348a-8b88-51ea-b912-4c460483ee91"
