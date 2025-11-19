@@ -17,7 +17,7 @@ include("find_licenses.jl")
 
 Returns a vector of the names of licenses matched in `text` and the percent of the text covered by these matches.
 
-The check is performed with active license set which can be controlled and default initialized with `reset_to_builtin_licenses`.
+The check is performed with active license set which can be modified with [`add_builtin_license`](@ref), [`add_license`](@ref), and [`clear_license_list`](@ref).  The defaults are initialized with [`reset_to_builtin_licenses`](@ref), which can be called to reset the (implicit) license set to the defaults.
 
 This provides some of the functionality of `licensecheck.Scan` in the original Go library ([https://github.com/google/licensecheck](https://github.com/google/licensecheck)).
 
@@ -136,7 +136,7 @@ end
 Adds new license to the active license set with provided `id` and `license_regular_expression`.
 
 Check documentation [https://pkg.go.dev/github.com/google/licensecheck#hdr-Scanning](https://pkg.go.dev/github.com/google/licensecheck#hdr-Scanning) to know how to create `license_regular_expression`.
-There is great number of examples in [https://github.com/google/licensecheck/tree/main/licenses](here).
+There are many examples [https://github.com/google/licensecheck/tree/main/licenses](here).
 """
 function add_license(id::String, lre::String)
     ccall((:AddLicense, licensecheck_jll.licensecheck),
