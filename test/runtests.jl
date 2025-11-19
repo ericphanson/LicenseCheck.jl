@@ -63,6 +63,17 @@ dorian_gray = """
     There is no such thing as a moral or an immoral book.  Books are well
     written, or badly written.  That is all."""
 
+
+lre = """
+The highest as the lowest form of __1__ is a 
+((mode of))??
+autobiography.
+Those who find ugly meanings in 
+((beautiful||ugly))
+things are corrupt without
+being charming.  This is a fault.
+"""
+
 @testset "LicenseCheck" begin
     @testset "`licensecheck`" begin
         result = licensecheck(MIT)
@@ -83,6 +94,22 @@ dorian_gray = """
         @test result.license_file_percent_covered ≈
               100 * (length(MIT) + length(Latex2e)) /
               (length(dorian_gray) + length(MIT) + length(Latex2e)) atol = 5
+
+        clear_license_list()
+        @test licensecheck(MIT).licenses_found == []
+
+        add_builtin_license("MIT")
+        @test licensecheck(MIT).licenses_found == ["MIT"]
+        @test licensecheck(Latex2e).licenses_found == []
+
+        @test licensecheck(dorian_gray).licenses_found == []
+        add_license("mylicense", lre)
+        @test licensecheck(dorian_gray).licenses_found == ["mylicense"]
+        @test licensecheck(Latex2e).licenses_found == []
+
+        reset_to_builtin_licenses()
+        @test licensecheck(MIT * "\n" * Latex2e).licenses_found == ["MIT", "Latex2e"]
+        @test licensecheck(dorian_gray).licenses_found == []
     end
 
     @testset "`is_osi_approved`" begin
@@ -104,7 +131,7 @@ dorian_gray = """
         @test fl.license_file_percent_covered > 90
 
         for method in (find_licenses, dir -> find_licenses(dir; allow_brute=false),
-             find_licenses_by_bruteforce, find_licenses_by_list_intersection)
+            find_licenses_by_bruteforce, find_licenses_by_list_intersection)
             results = method(joinpath(@__DIR__, ".."))
             @test only(results) == fl
         end
@@ -120,7 +147,7 @@ dorian_gray = """
         @test fl.licenses_found == ["MIT"]
         @test fl.license_file_percent_covered > 90
         @test_throws ArgumentError LicenseCheck.license_table("nul_string_dir",
-                                                              ["file_with_nul_in_the_middle.txt"];
-                                                              validate_strings=false)
+            ["file_with_nul_in_the_middle.txt"];
+            validate_strings=false)
     end
 end

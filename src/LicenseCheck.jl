@@ -5,7 +5,9 @@ using licensecheck_jll: licensecheck_jll
 export licensecheck, is_osi_approved
 export find_licenses, find_license
 export find_licenses_by_bruteforce, find_licenses_by_list,
-       find_licenses_by_list_intersection
+    find_licenses_by_list_intersection
+
+export clear_license_list, reset_to_builtin_licenses, add_builtin_license, add_license
 
 include("OSI_LICENSES.jl")
 include("find_licenses.jl")
@@ -13,9 +15,9 @@ include("find_licenses.jl")
 """
     licensecheck(text::String) -> @NamedTuple{licenses_found::Vector{String}, license_file_percent_covered::Float64}
 
-Returns a vector of the names of licenses (more specifically, the SPDX 3.10 license identifiers) matched in `text` and the percent of the text covered by these matches.
+Returns a vector of the names of licenses matched in `text` and the percent of the text covered by these matches.
 
-The full list of license IDs is located at [https://github.com/google/licensecheck/blob/v0.3.1/licenses/README.md](https://github.com/google/licensecheck/blob/v0.3.1/licenses/README.md), and includes the SDPX 3.10 licenses, [https://github.com/spdx/license-list-data/tree/v3.10/text](https://github.com/spdx/license-list-data/tree/v3.10/text).
+The check is performed with active license set which can be modified with [`add_builtin_license`](@ref), [`add_license`](@ref), and [`clear_license_list`](@ref).  The defaults are initialized with [`reset_to_builtin_licenses`](@ref), which can be called to reset the (implicit) license set to the defaults.
 
 This provides some of the functionality of `licensecheck.Scan` in the original Go library ([https://github.com/google/licensecheck](https://github.com/google/licensecheck)).
 
@@ -32,11 +34,21 @@ julia> licensecheck(text)
 """
 function licensecheck(text::String)
     arr, dims, license_file_percent_covered = ccall((:License,
-                                                     licensecheck_jll.licensecheck),
-                                                    Tuple{Ptr{Ptr{UInt8}},Cint,Float64},
-                                                    (Cstring,), text)
-    return (; licenses_found=unsafe_string.(unsafe_wrap(Array, arr, dims; own=true)),
-            license_file_percent_covered=license_file_percent_covered)
+            licensecheck_jll.licensecheck),
+        Tuple{Ptr{Ptr{UInt8}},Cint,Float64},
+        (Cstring,), text)
+
+    try
+        licenses_found = unsafe_string.(unsafe_wrap(Array, arr, dims; own=false))
+        return (; licenses_found, license_file_percent_covered)
+    finally
+        ccall((:FreeLicenseResult,
+                licensecheck_jll.licensecheck),
+            Nothing,
+            (Ptr{Ptr{UInt8}}, Cint),
+            arr, dims)
+
+    end
 end
 
 """
@@ -73,5 +85,64 @@ function is_osi_approved(nt::NamedTuple)
     return !isempty(nt.licenses_found) && all(is_osi_approved, nt.licenses_found)
 end
 is_osi_approved(::Nothing) = false # so that it can always be used with `find_license`
+
+"""
+    clear_license_list()
+
+Empties active license set.
+
+`licensecheck`` for such case will return empty result.
+
+See also: `add_builtin_license`, `add_license`
+"""
+function clear_license_list()
+    ccall((:ClearLicenseList, licensecheck_jll.licensecheck),
+        Nothing,
+        ())
+    return nothing
+end
+
+"""
+    reset_to_builtin_licenses()
+
+Reset active license set to the full state of built in licenses.
+
+The full list of license IDs is located at [https://github.com/google/licensecheck/blob/v0.3.1/licenses/README.md](https://github.com/google/licensecheck/blob/v0.3.1/licenses/README.md), and includes the SDPX 3.10 licenses, [https://github.com/spdx/license-list-data/tree/v3.10/text](https://github.com/spdx/license-list-data/tree/v3.10/text).
+"""
+function reset_to_builtin_licenses()
+    ccall((:ResetToBuiltinLicences, licensecheck_jll.licensecheck),
+        Nothing,
+        ())
+    return nothing
+end
+
+"""
+    add_builtin_license(name::String)
+
+Add one of the built in licenses to the active license set.
+See `reset_to_builtin_licenses` to learn which values `name` can take.
+Will have no effect or error if `name` is not found.
+"""
+function add_builtin_license(name::String)
+    ccall((:AddBuiltinLicense, licensecheck_jll.licensecheck),
+        Nothing,
+        (Cstring,), name)
+    return nothing
+end
+
+"""
+    add_license(id::String, license_regular_expression::String)
+
+Adds new license to the active license set with provided `id` and `license_regular_expression`.
+
+Check documentation [https://pkg.go.dev/github.com/google/licensecheck#hdr-Scanning](https://pkg.go.dev/github.com/google/licensecheck#hdr-Scanning) to know how to create `license_regular_expression`.
+There are many examples [https://github.com/google/licensecheck/tree/main/licenses](here).
+"""
+function add_license(id::String, lre::String)
+    ccall((:AddLicense, licensecheck_jll.licensecheck),
+        Nothing,
+        (Cstring, Cstring), id, lre)
+    return nothing
+end
 
 end # module
